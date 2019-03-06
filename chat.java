@@ -5,11 +5,20 @@ public class chat {
     // Display information about the available user interface options or command
     // manual.
     static void help() {
-
+        String helpStr = "";
+        helpStr += "\n\thelp                           \tGet list of commands."
+                + "\n\tmyip                            \tDisplay the IP address of this process."
+                + "\n\tmyport                          \tDisplay listening port for incomming connections."
+                + "\n\tconnect <destination> <port no> \t[Empty]"
+                + "\n\tlist                            \t[Empty]"
+                + "\n\tterminate <connection id>       \t[Empty]"
+                + "\n\tsend <connection id> <message>  \t[Empty]"
+                + "\n\texit                            \t[Empty]";
+        System.out.println(helpStr);
     }
 
     // Display the IP address of this process.
-    // Note: Not “Local” address (127.0.0.1). The actual IP of the computer.
+    // Note: Not 'Local' address (127.0.0.1). The actual IP of the computer.
     static void myip() {
 
     }
@@ -27,7 +36,7 @@ public class chat {
     // failure  in  connections  between  two  peers  should  be  indicated  by
     // both  the  peers  using  suitable  messages.  Self-connections and
     // duplicate connections should be flagged with suitable error messages
-    static void connect(String input) {
+    static void connect(String destination, String portN) {
 
     }
 
@@ -46,16 +55,16 @@ public class chat {
     // 192.168.21.21  should  end.  An  error  message  is  displayed  if  a
     // valid  connection  does  not  exist  as number 2. If a remote machine
     // terminates one of your connections, you should also display a message
-    static void terminate(String input) {
+    static void terminate(String connectionID) {
 
     }
 
     // (For example, send 3 Oh! This project is a piece of cake). This will send
     // the message to the host on the connection that is designated by the
-    // number 3 when command “list” is used.  The  message  to  be  sent  can
+    // number 3 when command 'list' is used.  The  message  to  be  sent  can
     // be  up-to  100  characters  long,  including  blank  spaces.  On
     // successfully  executing  the command,  the  sender  should  display
-    // “Message  sent  to  <connection  id>”  on  the  screen.  On  receiving
+    // 'Message  sent  to  <connection  id>'  on  the  screen.  On  receiving
     // any  message  from  the  peer,  the  receiver  should  display  the
     // received  message  along  with  the  sender information.
     // (Eg. If a process on 192.168.21.20 sends a message to a process on
@@ -64,8 +73,8 @@ public class chat {
     //
     // Message received from 192.168.21.20
     // Sender’s Port: <The port no. of the sender>
-    // Message: “<received message>”
-    static void send(String input) {
+    // Message: '<received message>'
+    static void send(String connectionID, String message) {
 
     }
 
@@ -78,43 +87,85 @@ public class chat {
     //////////////////// MAIN ////////////////////
 
     public static void main(String[] args) {
+        
+        //initial port number set to 1400
+        int portNumber = 1400; 
+        if (args.length != 0) {
+            try {
+                portNumber = Integer.parseInt(args[0]);
+            } catch (Exception e) {
+                System.out.println("\nError:\tInvalid port number. Exited");
+                return;
+            }
+        }
 
-        System.out.println("Howdy partner!\nYour port number is: " + args[0]);
+        String welcomeMsg = "";
+        
+        welcomeMsg += "\n"
+                + "\n############################"
+                + "\n## Welcome to Chat.java     "
+                + "\n## Your port number is: " + portNumber + "";
+
+
+        System.out.println(welcomeMsg);
+
+
 
         endProgram:
         while (true) {
-            System.out.print("\n\t>> ")
+            System.out.print("  >> ");
             Scanner scan = new Scanner(System.in);
             String input = scan.nextLine();
-            String[] inputTokens = input.split(" ", 2);
+            String[] inputTokens = input.split(" ");
             switch (inputTokens[0]) {
                 case "help" :
                     help();
                     break;
+
                 case "myip" :
                     myip();
                     break;
+
                 case "myport" :
                     myport();
                     break;
+
                 case "connect" :
-                    connect(inputTokens[1]);
+                    if (inputTokens.length > 2)
+                        connect(inputTokens[1], inputTokens[2]);
+                    else 
+                        System.out.println("\nError:\tNot enough arguements.");
                     break;
+
                 case "list" :
                     list();
                     break;
+
                 case "terminate" :
-                    terminate(inputTokens[1]);
+                    if (inputTokens.length > 1)
+                        terminate(inputTokens[1]);
+                    else 
+                        System.out.println("\nError:\tNot enough arguements.");
                     break;
+
                 case "send" :
-                    send(inputTokens[1]);
+                    if (inputTokens.length > 2)    
+                        send(inputTokens[1], inputTokens[2]);
+                    else 
+                        System.out.println("\nError:\tNot enough arguements.");
                     break;
+
                 case "exit" :
                     exit();
                     break endProgram;
+
+                case "" :
+                    break;
+
                 default :
-                    System.out.println("Error: '" + inputTokens[0] + "' is not "
-                            + "a recognized command of this chat application.");
+                    System.out.println(""
+                            + "\nError:\t'" + inputTokens[0] + "' is not a recognized command of this chat application. "
+                            + "\n\tEnter 'help' to get a list of commands.");
                     break;
             }
         }
