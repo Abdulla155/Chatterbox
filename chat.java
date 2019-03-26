@@ -1,32 +1,48 @@
+import java.io.*;
+import java.net.*;
 import java.util.*;
+import java.text.SimpleDateFormat;
 
 public class chat {
+
 
     // Display information about the available user interface options or command
     // manual.
     static void help() {
         String helpStr = "";
-        helpStr += "\n\thelp                           \tGet list of commands."
+        helpStr += "\thelp                            \tGet list of commands."
                 + "\n\tmyip                            \tDisplay the IP address of this process."
                 + "\n\tmyport                          \tDisplay listening port for incomming connections."
                 + "\n\tconnect <destination> <port no> \t[Empty]"
                 + "\n\tlist                            \t[Empty]"
                 + "\n\tterminate <connection id>       \t[Empty]"
                 + "\n\tsend <connection id> <message>  \t[Empty]"
-                + "\n\texit                            \t[Empty]";
+                + "\n\texit                            \t[Empty]"
+                + "\n";
         System.out.println(helpStr);
     }
 
     // Display the IP address of this process.
     // Note: Not 'Local' address (127.0.0.1). The actual IP of the computer.
     static void myip() {
-
+        String msg = "";
+        try(final DatagramSocket socket = new DatagramSocket()){
+            socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+            msg += "\t" + socket.getLocalAddress().getHostAddress();
+            msg += "\n";
+            System.out.println(msg);
+        }
+        catch(Exception e){
+            System.out.println("ERROR");
+        }
     }
 
     // Display the port on which this process is listening for incoming
     // connections.
-    static void myport() {
-
+    static void myport(int myPort) {
+        String msg = "";
+        msg += "\tListening on port: " + myPort + "\n";
+        System.out.println(msg);
     }
 
     // This command establishes a new TCP connection to the specified
@@ -36,8 +52,9 @@ public class chat {
     // failure  in  connections  between  two  peers  should  be  indicated  by
     // both  the  peers  using  suitable  messages.  Self-connections and
     // duplicate connections should be flagged with suitable error messages
-    static void connect(String destination, String portN) {
-
+    static void connect(String destination, String sendPort) {
+        String[] clientArgs = {"Anon", sendPort, destination};
+        Client.main(clientArgs);
     }
 
     // Display a numbered list of all the connections this process is part of.
@@ -46,7 +63,6 @@ public class chat {
     // display the IP address and the listening port of all the peers the
     // process is connected to.
     static void list() {
-
     }
 
     // This  command  will  terminate  the  connection  listed  under  the
@@ -56,7 +72,6 @@ public class chat {
     // valid  connection  does  not  exist  as number 2. If a remote machine
     // terminates one of your connections, you should also display a message
     static void terminate(String connectionID) {
-
     }
 
     // (For example, send 3 Oh! This project is a piece of cake). This will send
@@ -75,15 +90,14 @@ public class chat {
     // Sender’s Port: <The port no. of the sender>
     // Message: '<received message>'
     static void send(String connectionID, String message) {
-
     }
 
     // Close all connections and terminate this process. The other peers should
-    // also update their connection list by removing the peer that exits
+    // also update their connection list by removing the peer that exits 
     static void exit() {
-
     }
 
+    //////////////////////////////////////////////
     //////////////////// MAIN ////////////////////
 
     public static void main(String[] args) {
@@ -94,22 +108,21 @@ public class chat {
             try {
                 portNumber = Integer.parseInt(args[0]);
             } catch (Exception e) {
-                System.out.println("\nError:\tInvalid port number. Exited");
+                System.out.println("\tError: Invalid port number. Exited.\n");
                 return;
             }
         }
 
-        String welcomeMsg = "";
-        
+        //Start server on the set port
+        String[] serverArgs = {"" + portNumber};
+        Server.main(serverArgs);
+
+        String welcomeMsg = "";        
         welcomeMsg += "\n"
-                + "\n############################"
-                + "\n## Welcome to Chat.java     "
-                + "\n## Your port number is: " + portNumber + "";
-
-
+                + "\n#########################"
+                + "\nWelcome to Chat.java     "
+                + "\nYour port number is: " + portNumber + "";
         System.out.println(welcomeMsg);
-
-
 
         endProgram:
         while (true) {
@@ -127,14 +140,14 @@ public class chat {
                     break;
 
                 case "myport" :
-                    myport();
+                    myport(portNumber);
                     break;
 
                 case "connect" :
                     if (inputTokens.length > 2)
                         connect(inputTokens[1], inputTokens[2]);
                     else 
-                        System.out.println("\nError:\tNot enough arguements.");
+                        System.out.println("\tError: Not enough arguements.\n");
                     break;
 
                 case "list" :
@@ -145,14 +158,14 @@ public class chat {
                     if (inputTokens.length > 1)
                         terminate(inputTokens[1]);
                     else 
-                        System.out.println("\nError:\tNot enough arguements.");
+                        System.out.println("\tError: Not enough arguements.\n");
                     break;
 
                 case "send" :
                     if (inputTokens.length > 2)    
                         send(inputTokens[1], inputTokens[2]);
                     else 
-                        System.out.println("\nError:\tNot enough arguements.");
+                        System.out.println("\tError: Not enough arguements. \n");
                     break;
 
                 case "exit" :
@@ -164,8 +177,8 @@ public class chat {
 
                 default :
                     System.out.println(""
-                            + "\nError:\t'" + inputTokens[0] + "' is not a recognized command of this chat application. "
-                            + "\n\tEnter 'help' to get a list of commands.");
+                            + "\tError: '" + inputTokens[0] + "' is not a recognized command of this chat application. "
+                            + "\n\tEnter 'help' to get a list of commands.\n");
                     break;
             }
         }
