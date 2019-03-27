@@ -7,7 +7,7 @@ public class Test{
             public void run(){
                 while(true){
                     System.out.print("A");
-                    try {Thread.sleep(10);}
+                    try {Thread.sleep(100);}
                     catch(Exception e) {break;}
                 }
             }

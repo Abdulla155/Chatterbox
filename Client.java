@@ -12,33 +12,33 @@ public class Client  {
 	private ObjectOutputStream sOutput;		// to write on the socket
 	private Socket socket;
 
-	// the server, the port and the username
-	private String server, username;
-	private int port;
+	// the destination, the sendPort and the myPort
+	private String destination, myPort;
+	private int sendPort;
 
 	/*
 	 *  Constructor
-	 *  server: the server address
-	 *  port: the port number
-	 *  username: the username
+	 *  destination: the destination address
+	 *  sendPort: the sendPort number
+	 *  myPort: the myPort
 	 */
-	Client(String server, int port, String username) {
-		this.server = server;
-		this.port = port;
-		this.username = username;
+	Client(String destination, int sendPort, String myPort) {
+		this.destination = destination;
+		this.sendPort = sendPort;
+		this.myPort = myPort;
 	}
 
 	/*
 	 * To start the dialog
 	 */
 	public boolean start() {
-		// try to connect to the server
+		// try to connect to the destination
 		try {
-			socket = new Socket(server, port);
+			socket = new Socket(destination, sendPort);
 		}
 		// if it failed not much I can so
 		catch(Exception ec) {
-			display("\tError connectiong to server: " + server + "\n\t" + ec);
+			display("\tError connecting to destination: " + destination + "\n\t" + ec);
 			return false;
 		}
 
@@ -56,13 +56,13 @@ public class Client  {
 			return false;
 		}
 
-		// creates the Thread to listen from the server
-		new ListenFromServer().start();
-		// Send our username to the server this is the only message that we
+		// creates the Thread to listen from the destination
+		new ListenFromdestination().start();
+		// Send our myPort to the destination this is the only message that we
 		// will send as a String. All other messages will be ChatMessage objects
 		try
 		{
-			sOutput.writeObject(username);
+			sOutput.writeObject(myPort);
 		}
 		catch (IOException eIO) {
 			display("Exception doing login : " + eIO);
@@ -77,18 +77,22 @@ public class Client  {
 	 * To send a message to the console
 	 */
 	private void display(String msg) {
-		System.out.println(msg); 
+		String msgF = "";
+        msgF += ""
+            + "\nClient- " + msg 
+            + "\n";
+        System.out.println(msgF);
     }
 
 	/*
-	 * To send a message to the server
+	 * To send a message to the destination
 	 */
-	void sendMessage(ChatMessage msg) {
+	public void sendMessage(ChatMessage msg) {
 		try {
 			sOutput.writeObject(msg);
 		}
 		catch(IOException e) {
-			display("Exception writing to server: " + e);
+			display("Exception writing to destination: " + e);
 		}
 	}
 
@@ -96,7 +100,7 @@ public class Client  {
 	 * When something goes wrong
 	 * Close the Input/Output streams and disconnect not much to do in the catch clause
 	 */
-	private void disconnect() {
+	public void disconnect() {
 		try {
 			if(sInput != null) sInput.close();
 		}
@@ -112,16 +116,33 @@ public class Client  {
 
 
 	}
+
+	public String getIP(){
+		String ip = "";
+        try(final DatagramSocket socket = new DatagramSocket()){
+            socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+            ip += socket.getLocalAddress().getHostAddress();            
+        }
+        catch(Exception e){
+            System.out.println("ERROR");
+        }
+		return ip;
+	}
+
+	public String getMyPort(){
+		return this.myPort;
+	}
+
 	/*
 	 * To start the Client in console mode use one of the following command
 	 * > java Client
-	 * > java Client username
-	 * > java Client username portNumber
-	 * > java Client username portNumber serverAddress
+	 * > java Client myPort
+	 * > java Client myPort portNumber
+	 * > java Client myPort portNumber destinationAddress
 	 * at the console prompt
 	 * If the portNumber is not specified 1500 is used
-	 * If the serverAddress is not specified "localHost" is used
-	 * If the username is not specified "Anonymous" is used
+	 * If the destinationAddress is not specified "localHost" is used
+	 * If the myPort is not specified "Anonymous" is used
 	 * > java Client
 	 * is equivalent to
 	 * > java Client Anonymous 1500 localhost
@@ -129,21 +150,22 @@ public class Client  {
 	 *
 	 * If an error occurs the program stops
 	 */
+	
+	/*
+	 //////////////////////////////////////// Main Not Needed ////////////////
 	public static void main(String[] args) {
 		// default values
-		int portNumber = 1400;
-		String serverAddress = "localhost";
-		String userName = "Anonymous";
+		int sendPort = 1400;
+		String destination = "localhost";
+		String myPort = "1400";
 
 		// depending of the number of arguments provided we fall through
 		switch(args.length) {
-			// > javac Client username portNumber serverAddr
 			case 3:
-				serverAddress = args[2];
-			// > javac Client username portNumber
-			case 2:
 				try {
-					portNumber = Integer.parseInt(args[1]);
+                    destination = args[0];
+					sendPort = Integer.parseInt(args[1]);
+                    myPort = args[2];
 				}
 				catch(Exception e) {
                     String msg = "";
@@ -152,12 +174,7 @@ public class Client  {
 					System.out.println(msg);
 					return;
 				}
-			// > javac Client username
-			case 1:
-				userName = args[0];
-			// > java Client
-			case 0:
-				break;
+                break;
 			// invalid number of arguments
 			default:
 				String msg = "";
@@ -167,8 +184,8 @@ public class Client  {
                 return;
 		}
 		// create the Client object
-		Client client = new Client(serverAddress, portNumber, userName);
-		// test if we can start the connection to the Server
+		Client client = new Client(destination, sendPort, myPort);
+		// test if we can start the connection to the destination
 		// if it failed nothing we can do
 		if(!client.start())
 			return;
@@ -176,33 +193,39 @@ public class Client  {
 		// wait for messages from user
 		Scanner scan = new Scanner(System.in);
 		// loop forever for message from the user
+        //endWhile:
 		while(true) {
-			System.out.print("> ");
-			// read message from user
+			/*
+		    System.out.print("  >> ");
 			String msg = scan.nextLine();
+
 			// logout if message is LOGOUT
 			if(msg.equalsIgnoreCase("LOGOUT")) {
 				client.sendMessage(new ChatMessage(ChatMessage.LOGOUT, ""));
-				// break to do the disconnect
-				break;
+				break; // break to do the disconnect
 			}
+
 			// message WhoIsIn
 			else if(msg.equalsIgnoreCase("WHOISIN")) {
 				client.sendMessage(new ChatMessage(ChatMessage.WHOISIN, ""));
 			}
+
+            // message 
 			else {				// default to ordinary message
 				client.sendMessage(new ChatMessage(ChatMessage.MESSAGE, msg));
 			}
+            
 		}
 		// done disconnect
 		client.disconnect();
 	}
+	*/
 
 	/*
-	 * a class that waits for the message from the server and append them to the JTextArea
+	 * a class that waits for the message from the destination and append them to the JTextArea
 	 * System.out.println() it in console 
 	 */
-	class ListenFromServer extends Thread {
+	class ListenFromdestination extends Thread {
 
 		public void run() {
 			while(true) {
@@ -210,10 +233,10 @@ public class Client  {
 					String msg = (String) sInput.readObject();
 					//print the message and add back the prompt
                     System.out.println(msg);
-                    System.out.print("> ");
+                    System.out.print("  >> ");
 				}
 				catch(IOException e) {
-					display("Server has close the connection: " + e);
+					display("destination has close the connection: " + e);
 					break;
 				}
 				// can't happen with a String object but need the catch anyhow

@@ -25,14 +25,18 @@ public class Server {
 		// the port
 		this.port = port;
 		// to display hh:mm:ss
-		sdf = new SimpleDateFormat("HH:mm:ss");
+		sdf = new SimpleDateFormat("HH:mm");
 		// ArrayList for the Client list
 		al = new ArrayList<ClientThread>();
 	}
 
+	////////////////////////////////////////////////
 
+	public ArrayLst<ClientThread> getList(){
+		return al;
+	}
 
-	public void start() {
+	public void start() { 
 		keepGoing = true;
 		/* create socket server and wait for connection requests */
 		try
@@ -41,7 +45,7 @@ public class Server {
 			ServerSocket serverSocket = new ServerSocket(port);
 
 			// infinite loop to wait for connections
-			while(keepGoing)
+			while(keepGoing) 
 			{
 				// format message saying we are waiting
 				display("Waiting for Clients on port " + port + ".");
@@ -100,7 +104,7 @@ public class Server {
         String msgF = "";
 		String time = sdf.format(new Date());;
         msgF += ""
-            + "\nServer - " + time + " " + msg 
+            + "\nServer- " + msg 
             + "\n";
         System.out.print(msgF);
 	}
@@ -139,26 +143,24 @@ public class Server {
 		}
 	}
 
-
-
+	/*
 	/*
 	 *  To run as a console application just open a console window and:
 	 * > java Server
 	 * > java Server portNumber
 	 * If the port number is not specified 1500 is used
-	 */
+	 
 	public static void main(String[] args) {
 		// create a server object and start it on a thread
-        final int portNumber = Integer.parseInt(args[0]) ;
+        final int portNumber = Integer.parseInt(args[0]);
+        Server server = new Server(portNumber);
         new Thread(){
             public void run(){
-                Server server = new Server(portNumber);
                 server.start();
             };
         }.start();
-        //Thread serverThread = new Thread(serverRun);
-        //serverThread.run();
 	}
+	*/
 
 	/** One instance of this thread will run for each client */
 	class ClientThread extends Thread {
@@ -174,6 +176,8 @@ public class Server {
 		ChatMessage cm;
 		// the date I connect
 		String date;
+
+		String ip;
 
 		// Constructore
 		ClientThread(Socket socket) {
@@ -200,6 +204,15 @@ public class Server {
 			catch (ClassNotFoundException e) {
 			}
             date = new Date().toString() + "\n";
+
+			//Get IP
+			try(final DatagramSocket socket = new DatagramSocket()){
+				socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+				ip = socket.getLocalAddress().getHostAddress();            
+			}
+			catch(Exception e){
+				System.out.println("ERROR");
+			}
 		}
 
 		// what will run forever
