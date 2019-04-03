@@ -13,8 +13,8 @@ public class Client  {
 	private Socket socket;
 
 	// the destination, the sendPort and the myPort
-	private String destination, myPort;
-	private int sendPort;
+	private String destination, myIP;
+	private int sendPort, myPort;
 
 	/*
 	 *  Constructor
@@ -22,10 +22,11 @@ public class Client  {
 	 *  sendPort: the sendPort number
 	 *  myPort: the myPort
 	 */
-	Client(String destination, int sendPort, String myPort) {
+	Client(String destination, int sendPort, int myPort, String myIP) {
 		this.destination = destination;
 		this.sendPort = sendPort;
 		this.myPort = myPort;
+		this.myIP = myIP;
 	}
 
 	/*
@@ -34,11 +35,11 @@ public class Client  {
 	public boolean start() {
 		// try to connect to the destination
 		try {
-			socket = new Socket(destination, sendPort);
+			socket = new Socket(this.destination, this.sendPort);
 		}
 		// if it failed not much I can so
 		catch(Exception ec) {
-			display("\tError connecting to destination: " + destination + "\n\t" + ec);
+			display("\tError connecting to destination: " + this.destination + "\n\t" + ec);
 			return false;
 		}
 
@@ -62,7 +63,8 @@ public class Client  {
 		// will send as a String. All other messages will be ChatMessage objects
 		try
 		{
-			sOutput.writeObject(myPort);
+			String username = myIP + " " + myPort;
+			sOutput.writeObject(username);
 		}
 		catch (IOException eIO) {
 			display("Exception doing login : " + eIO);
@@ -74,7 +76,7 @@ public class Client  {
 	}
 
 	/*
-	 * To send a message to the console
+	 * To send a message to the console  
 	 */
 	private void display(String msg) {
 		String msgF = "";
@@ -118,6 +120,7 @@ public class Client  {
 	}
 
 	public String getIP(){
+		/*
 		String ip = "";
         try(final DatagramSocket socket = new DatagramSocket()){
             socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
@@ -126,11 +129,12 @@ public class Client  {
         catch(Exception e){
             System.out.println("ERROR");
         }
-		return ip;
+		*/
+		return this.destination;
 	}
 
 	public String getMyPort(){
-		return this.myPort;
+		return "" + this.sendPort;
 	}
 
 	/*

@@ -11,13 +11,16 @@ public class Server {
 	// a unique ID for each connection
 	private static int uniqueId;
 	// an ArrayList to keep the list of the Client
-	private ArrayList<ClientThread> al;
+	public ArrayList<ClientThread> al;
+	private ArrayList<String> ipAL;
 	// to display time
 	private SimpleDateFormat sdf;
 	// the port number to listen for connection
 	private int port;
 	// the boolean that will be turned of to stop the server
 	private boolean keepGoing;
+
+	private String myIP;
 
 
     //Constructor
@@ -28,12 +31,23 @@ public class Server {
 		sdf = new SimpleDateFormat("HH:mm");
 		// ArrayList for the Client list
 		al = new ArrayList<ClientThread>();
+		ipAL = new ArrayList<String>();
+
+		//Get IP
+		this.myIP = "";
+		try(final DatagramSocket sockett = new DatagramSocket()){
+			sockett.connect(InetAddress.getByName("8.8.8.8"), 10002);
+			this.myIP = sockett.getLocalAddress().getHostAddress();            
+		}
+		catch(Exception e){
+			System.out.println("ERROR");
+		}
 	}
 
 	////////////////////////////////////////////////
 
-	public ArrayLst<ClientThread> getList(){
-		return al;
+	public ArrayList<String> getList(){
+		return this.ipAL;
 	}
 
 	public void start() { 
@@ -51,12 +65,43 @@ public class Server {
 				display("Waiting for Clients on port " + port + ".");
 
 				Socket socket = serverSocket.accept();  	// accept connection
+				
 				// if I was asked to stop
 				if(!keepGoing)
 					break;
+				String ipipip = "" + socket.getLocalAddress();
+				//ipAL.add(ipipip.substring(1) + " " + socket.getLocalPort());
+				//System.out.println("TODTRING: " + ipipip.substring(1) + " " + socket.getLocalPort());
 				ClientThread t = new ClientThread(socket);  // make a thread of it
 				al.add(t);									// save it in the ArrayList
+				
+				/*
+				if(!(ipAL.contains(t.toStringg()))){
+					System.out.println("hello");
+					try{
+						//int sendPort_INT = Integer.parseInt(incomingPort);
+						//int myPort_INT = Integer.parseInt(myPort);
+						Client newClient = new Client(ipipip.substring(1), socket.getLocalPort(), port, myIP);
+						if(!newClient.start())
+							return;		
+						System.out.println("PISPSISPISPISPISPISPIS");			
+
+					} catch(Exception e){
+						String msg = "";
+						msg +=  "\tError: " + e
+							+ "\n\tInvalid usage of 'connect'"
+							+ "\n\tEnter 'help' to see proper usage.\n";
+						System.out.println(msg);
+					}
+				}	
+				*/						
+				ipAL.add(t.toStringg());	
+				
+				//System.out.println("aerhjaoirhaiohgZZZZZZZZZZZZZZ");
+
 				t.start();
+				
+
 			}
 			// I was asked to stop
 			try {
@@ -113,8 +158,9 @@ public class Server {
 	 */
 	private synchronized void broadcast(String message) {
 		// add HH:mm:ss and \n to the message
-		String time = sdf.format(new Date());
-		String messageLf = "\n" + time + " " + message + "\n";
+		//String time = sdf.format(new Date());
+		//String messageLf = "\n" + time + " " + message + "\n";
+		String messageLf = message;
 		// display message on console
 		System.out.println(messageLf);
 
@@ -143,27 +189,8 @@ public class Server {
 		}
 	}
 
-	/*
-	/*
-	 *  To run as a console application just open a console window and:
-	 * > java Server
-	 * > java Server portNumber
-	 * If the port number is not specified 1500 is used
-	 
-	public static void main(String[] args) {
-		// create a server object and start it on a thread
-        final int portNumber = Integer.parseInt(args[0]);
-        Server server = new Server(portNumber);
-        new Thread(){
-            public void run(){
-                server.start();
-            };
-        }.start();
-	}
-	*/
-
 	/** One instance of this thread will run for each client */
-	class ClientThread extends Thread {
+	public class ClientThread extends Thread {
 		// the socket where to listen/talk
 		Socket socket;
 		ObjectInputStream sInput;
@@ -174,16 +201,28 @@ public class Server {
 		String username;
 		// the only type of message a will receive
 		ChatMessage cm;
-		// the date I connect
-		String date;
 
-		String ip;
+		String myIP;
+		String myPort;
 
 		// Constructore
 		ClientThread(Socket socket) {
+			//Get IP
+			this.myIP = "";
+			this.myPort = "" + socket.getLocalPort();
+			try(final DatagramSocket sockett = new DatagramSocket()){
+				sockett.connect(InetAddress.getByName("8.8.8.8"), 10002);
+				this.myIP = sockett.getLocalAddress().getHostAddress();            
+			}
+			catch(Exception e){
+				System.out.println("ERROR");
+			}
+			
 			// a unique id
-			id = ++uniqueId;
+			id = ++unciqueId;
 			this.socket = socket;
+			String incomingIP = "";
+			String incomingPort = "";
 			/* Creating both Data Stream */
 			System.out.println("Thread trying to create Object Input/Output Streams");
 			try
@@ -193,7 +232,8 @@ public class Server {
 				sInput  = new ObjectInputStream(socket.getInputStream());
 				// read the username
 				username = (String) sInput.readObject();
-				display(username + " just connected.");
+				incomingIP = username.split(" ")[0];
+				display(incomingIP + " just connected.");
 			}
 			catch (IOException e) {
 				display("Exception creating new Input/output Streams: " + e);
@@ -203,20 +243,13 @@ public class Server {
 			// but I read a String, I am sure it will work
 			catch (ClassNotFoundException e) {
 			}
-            date = new Date().toString() + "\n";
 
-			//Get IP
-			try(final DatagramSocket socket = new DatagramSocket()){
-				socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
-				ip = socket.getLocalAddress().getHostAddress();            
-			}
-			catch(Exception e){
-				System.out.println("ERROR");
-			}
+			
 		}
 
 		// what will run forever
 		public void run() {
+			String incomingIP, incomingPort;
 			// to loop until LOGOUT
 			boolean keepGoing = true;
 			while(keepGoing) {
@@ -232,13 +265,21 @@ public class Server {
 					break;
 				}
 				// the messaage part of the ChatMessage
-				String message = cm.getMessage();
+				String message;
+				incomingIP = cm.getUser().split(" ")[0];
+				incomingPort = cm.getUser().split(" ")[1];
+				message = "\n\tMessage received from " + incomingIP
+					 	+ "\n\tSender's Port: " + incomingPort
+					 	+ "\n\tMessage: " + cm.getMessage();
 
+				broadcast(message);
+				/*
 				// Switch on the type of message receive
 				switch(cm.getType()) {
 
 				case ChatMessage.MESSAGE:
-					broadcast(username + ": " + message);
+					//broadcast(username + ": " + message);
+					broadcast(message);
 					break;
 				case ChatMessage.LOGOUT:
 					display(username + " disconnected with a LOGOUT message.");
@@ -253,6 +294,7 @@ public class Server {
 					}
 					break;
 				}
+				*/
 			}
 			// remove myself from the arrayList containing the list of the
 			// connected Clients
@@ -281,6 +323,7 @@ public class Server {
 		 * Write a String to the Client output stream
 		 */
 		private boolean writeMsg(String msg) {
+			String msgF;
 			// if Client is still connected send the message to it
 			if(!socket.isConnected()) {
 				close();
@@ -296,6 +339,13 @@ public class Server {
 				display(e.toString());
 			}
 			return true;
+		}
+		
+		private String toStringg() {
+			String incomingIP = username.split(" ")[0];
+			String incomingPort = username.split(" ")[1];
+			String msg = "\t" +this.id + "\t" + incomingIP + "\t" + incomingPort;
+			return msg; 
 		}
 	}
 }

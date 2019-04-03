@@ -16,14 +16,25 @@ public class ChatMessage implements Serializable {
 	static final int WHOISIN = 0, MESSAGE = 1, LOGOUT = 2;
 	private int type;
 	private String message;
+	private String user;
 
 	// constructor
-	ChatMessage(int type, String message) {
+	ChatMessage(int type, String user, String message) {
 		this.type = type;
 		this.message = message;
+		this.user = user;
+	}
+
+	ChatMessage(String user, String message) {
+		this.message = message;
+		this.user = user;
 	}
 
 	// getters
+	String getUser(){
+		return this.user;
+	}
+
 	int getType() {
 		return type;
 	}
