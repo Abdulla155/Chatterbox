@@ -83,7 +83,8 @@ public class Client  {
 			sOutput.writeObject(msg);
 		}
 		catch(IOException e) {
-			System.out.print("\n\tException writing to destination: \n\t\t" + e);
+			System.out.print("\n\tException writing to destination: \n\t\t" + e
+					+ "\n\tIf error persists, terminate connection and reconnect.");
 		}
 	}
 
@@ -130,7 +131,9 @@ public class Client  {
 				}
 				catch(IOException e) {
 					display("Destination has close the connection: " + e 
-						+ "\n\t\tUse the 'terminate' command to remove this connection.");
+						+ "\n\t\tUse the 'terminate' command to remove this id."
+						+ "\n\t\tDestination: " + destination
+						+ "\n\t\tOn Port: " + sendPort);
 					break;
 				}
 				// can't happen with a String object but need the catch anyhow
@@ -138,5 +141,6 @@ public class Client  {
 				}
 			}
 		}
+
 	}
 }

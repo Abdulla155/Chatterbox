@@ -135,11 +135,11 @@ public class Chat {
     public void terminate(String connectionID, Server server) {
         String msg = "";
         try{
-            int connectionID_INT = Integer.parseInt(connectionID);
+            int connectionID_INT = Integer.parseInt(connectionID) - 1;
             Client client = clientList.get(connectionID_INT);
             client.disconnect();
             clientList.remove(connectionID_INT);
-            msg = "\n\t" + client.getIP() + " disconnected. ";
+            msg = "\t" + client.getIP() + " disconnected.\n";
             System.out.println(msg);
         } catch(Exception e){
             msg += "\tError: " + e
@@ -190,7 +190,7 @@ public class Chat {
     public void exit(Server server) {  
         
         //clientList = server.getList();   
-        for (int i = 0; i < this.clientList.size(); i++){
+        for (int i = 1; i <= this.clientList.size(); i++){
             String iStr = "" + i;
             terminate(iStr, server);
         }
