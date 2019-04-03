@@ -1,6 +1,5 @@
 import java.io.*;
 import java.net.*;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 /*
@@ -13,22 +12,18 @@ public class Server {
 	// an ArrayList to keep the list of the Client
 	public ArrayList<ClientThread> al;
 	private ArrayList<String> ipAL;
-	// to display time
-	private SimpleDateFormat sdf;
+	// the ip server
+	private String myIP;
 	// the port number to listen for connection
 	private int port;
 	// the boolean that will be turned of to stop the server
 	private boolean keepGoing;
-
-	private String myIP;
 
 
     //Constructor
 	public Server(int port){
 		// the port
 		this.port = port;
-		// to display hh:mm:ss
-		sdf = new SimpleDateFormat("HH:mm");
 		// ArrayList for the Client list
 		al = new ArrayList<ClientThread>();
 		ipAL = new ArrayList<String>();
@@ -62,46 +57,18 @@ public class Server {
 			while(keepGoing) 
 			{
 				// format message saying we are waiting
-				display("Waiting for Clients on port " + port + ".");
+				display("Waiting for Clients on port " + port + ".\n\n  >> ");
 
 				Socket socket = serverSocket.accept();  	// accept connection
 				
 				// if I was asked to stop
 				if(!keepGoing)
 					break;
-				String ipipip = "" + socket.getLocalAddress();
-				//ipAL.add(ipipip.substring(1) + " " + socket.getLocalPort());
-				//System.out.println("TODTRING: " + ipipip.substring(1) + " " + socket.getLocalPort());
+
 				ClientThread t = new ClientThread(socket);  // make a thread of it
-				al.add(t);									// save it in the ArrayList
-				
-				/*
-				if(!(ipAL.contains(t.toStringg()))){
-					System.out.println("hello");
-					try{
-						//int sendPort_INT = Integer.parseInt(incomingPort);
-						//int myPort_INT = Integer.parseInt(myPort);
-						Client newClient = new Client(ipipip.substring(1), socket.getLocalPort(), port, myIP);
-						if(!newClient.start())
-							return;		
-						System.out.println("PISPSISPISPISPISPISPIS");			
-
-					} catch(Exception e){
-						String msg = "";
-						msg +=  "\tError: " + e
-							+ "\n\tInvalid usage of 'connect'"
-							+ "\n\tEnter 'help' to see proper usage.\n";
-						System.out.println(msg);
-					}
-				}	
-				*/						
-				ipAL.add(t.toStringg());	
-				
-				//System.out.println("aerhjaoirhaiohgZZZZZZZZZZZZZZ");
-
+				al.add(t);									// save it in the ArrayList	
+				ipAL.add(t.toStringg());
 				t.start();
-				
-
 			}
 			// I was asked to stop
 			try {
@@ -119,18 +86,16 @@ public class Server {
 				}
 			}
 			catch(Exception e) {
-				display("Exception closing the server and clients: " + e);
+				display("\tException closing the server and clients: \n\t\t" + e);
 			}
 		}
 		// something went bad
 		catch (IOException e) {
-            String msg = sdf.format(new Date()) + "Exception on new ServerSocket: " + e ;
-			display(msg);
+			display("\tException on new ServerSocket: \n\t\t" + e);
 		}
 	}
-    /*
-     * For a GUI to stop the server
-     */
+
+    //to stop the server
 	protected void stop() {
 		keepGoing = false;
 		// connect to myself as Client to exit statement
@@ -142,38 +107,30 @@ public class Server {
 			// nothing I can really do
 		}
 	}
-	/*
-	 * Display an event (not a message) to the console
-	 */
+
+	//Display an event (not a message) to the console
 	private void display(String msg) {
-        String msgF = "";
-		String time = sdf.format(new Date());;
-        msgF += ""
-            + "\nServer- " + msg 
-            + "\n";
+        String msgF = "\n\tServer- " + msg;
         System.out.print(msgF);
 	}
-	/*
-	 *  to broadcast a message to all Clients
-	 */
-	private synchronized void broadcast(String message) {
-		// add HH:mm:ss and \n to the message
-		//String time = sdf.format(new Date());
-		//String messageLf = "\n" + time + " " + message + "\n";
-		String messageLf = message;
-		// display message on console
-		System.out.println(messageLf);
 
+	//to broadcast a message to all Clients
+	private synchronized void broadcast(String message) {
+		// display single message on console
+		System.out.print(message + "\n\n  >> ");
+
+		/* to all clients:
 		// we loop in reverse order in case we would have to remove a Client
 		// because it has disconnected
 		for(int i = al.size(); --i >= 0;) {
 			ClientThread ct = al.get(i);
 			// try to write to the Client if it fails remove it from the list
-			if(!ct.writeMsg(messageLf)) {
+			if(!ct.writeMsg(message)) {
 				al.remove(i);
 				display("Disconnected Client " + ct.username + " removed from list.");
 			}
 		}
+		*/
 	}
 
 	// for a client who logoff using the LOGOUT message
@@ -219,12 +176,12 @@ public class Server {
 			}
 			
 			// a unique id
-			id = ++unciqueId;
+			id = ++uniqueId;
 			this.socket = socket;
 			String incomingIP = "";
 			String incomingPort = "";
 			/* Creating both Data Stream */
-			System.out.println("Thread trying to create Object Input/Output Streams");
+			//display("Thread trying to create Object Input/Output Streams\n\n  >> ");
 			try
 			{
 				// create output first
@@ -236,7 +193,7 @@ public class Server {
 				display(incomingIP + " just connected.");
 			}
 			catch (IOException e) {
-				display("Exception creating new Input/output Streams: " + e);
+				display("Exception creating new Input/output Streams: \n\t\t" + e + "\n\n  >> ");
 				return;
 			}
 			// have to catch ClassNotFoundException
@@ -249,19 +206,17 @@ public class Server {
 
 		// what will run forever
 		public void run() {
-			String incomingIP, incomingPort;
+			String incomingIP, incomingPort; 
 			// to loop until LOGOUT
 			boolean keepGoing = true;
 			while(keepGoing) {
 				// read a String (which is an object)
 				try {
 					cm = (ChatMessage) sInput.readObject();
-				}
-				catch (IOException e) {
-					display(username + " Exception reading Streams: " + e);
+				} catch (IOException e) {
+					display(username + " Exception reading Streams: \n\t\t" + e + "\n\n  >> ");
 					break;
-				}
-				catch(ClassNotFoundException e2) {
+				} catch(ClassNotFoundException e2) {
 					break;
 				}
 				// the messaage part of the ChatMessage
@@ -273,28 +228,6 @@ public class Server {
 					 	+ "\n\tMessage: " + cm.getMessage();
 
 				broadcast(message);
-				/*
-				// Switch on the type of message receive
-				switch(cm.getType()) {
-
-				case ChatMessage.MESSAGE:
-					//broadcast(username + ": " + message);
-					broadcast(message);
-					break;
-				case ChatMessage.LOGOUT:
-					display(username + " disconnected with a LOGOUT message.");
-					keepGoing = false;
-					break;
-				case ChatMessage.WHOISIN:
-					writeMsg("List of the users connected at " + sdf.format(new Date()) + "\n");
-					// scan al the users connected
-					for(int i = 0; i < al.size(); ++i) {
-						ClientThread ct = al.get(i);
-						writeMsg((i+1) + ") " + ct.username + " since " + ct.date);
-					}
-					break;
-				}
-				*/
 			}
 			// remove myself from the arrayList containing the list of the
 			// connected Clients

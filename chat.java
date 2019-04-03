@@ -1,7 +1,6 @@
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import java.text.SimpleDateFormat;
 
 public class Chat {
 
@@ -9,6 +8,17 @@ public class Chat {
 
     public Chat(){
         clientList = new ArrayList<Client>();
+    }
+
+    private ArrayList<String[]> ipList() {
+        ArrayList<String[]> ipList = new ArrayList<String[]>();
+        String[] ipPort = new String[2];
+        for(Client client: clientList){
+            ipPort[0] = client.getIP();
+            ipPort[1] = client.getMyPort();
+            ipList.add(ipPort);
+        }
+        return ipList;
     }
 
     // Display information about the available user interface options or command
@@ -60,19 +70,43 @@ public class Chat {
     // both  the  peers  using  suitable  messages.  Self-connections and
     // duplicate connections should be flagged with suitable error messages
     public void connect(String destination, String sendPort, String myPort, String myip) {
+        
+        // Check is ip is already connected
+        boolean alreadyConnected = false;
+        String[] ipPort = new String[2];
+        ipPort[0] = destination;
+        ipPort[1] = sendPort;
+        //get data from connected clients
+        for(String[] iPCheck : this.ipList() ){
+            if ( iPCheck[0].equals(destination) )
+                if ( iPCheck[1].equals(sendPort) )
+                    alreadyConnected = true;
+        } 
+        if(alreadyConnected){
+            System.out.print("\tError: Already connected to " + destination + " on port " + sendPort + "\n\n  >> ");
+            return;
+        } 
+
+        // Check if connected to same ip and port
+        if(destination.equals(myip))
+            if(sendPort.equals(myPort)){
+                System.out.print("\tError: Can not connect to oneself.\n\n  >> ");
+                return;
+            }
+
         try{
             int sendPort_INT = Integer.parseInt(sendPort);
             int myPort_INT = Integer.parseInt(myPort);
             Client newClient = new Client(destination, sendPort_INT, myPort_INT, myip);
-            this.clientList.add(newClient);
             if(!newClient.start())
                 return;
+            
+            this.clientList.add(newClient);
         } catch(Exception e){
             String msg = "";
-            msg +=  "\tError: " + e
-                + "\n\tInvalid usage of 'connect'"
-                + "\n\tEnter 'help' to see proper usage.\n";
-            System.out.println(msg);
+            msg +=  "\tError connecting: \n\t\t" + e
+                + "\n\tEnter 'help' to see proper usage.\n\n  >> ";
+            System.out.print(msg);
         }
     }
 
@@ -82,31 +116,14 @@ public class Chat {
     // display the IP address and the listening port of all the peers the
     // process is connected to.
     public void list(Server server) {
-        int i = 0;
-        String msg;// = "Server\n\tid:\tIP Address\tPort No.";
-        /*
-        ArrayList<String> clientList = server.getList();        
-        for (String client: clientList){
-            /*
-            msg += "\t" + client.id + ":\t" 
-                + client.getID() + "\t\t" 
-                + client.getMyPort() + "\n";
-                
-            msg += "\n" + client;
-        }
-        System.out.println(msg);
-        */
-
-        i = 1;
-        msg = "\tid:\tIP Address\tPort No.\n";      
+        int i = 1;
+        String msg = "\tid:\tIP Address\tPort No.\n";      
         for (Client client: this.clientList){
             msg += "\t" + i + ":\t" 
                 + client.getIP() + "\t" 
                 + client.getMyPort() + "\n";
             i++;
-        }
-        System.out.println(msg);
-
+        } System.out.println(msg);
     }
 
     // This  command  will  terminate  the  connection  listed  under  the
@@ -150,7 +167,7 @@ public class Chat {
     // Message: '<received message>'
     public void send(String user, String connectionID, String message, Server server) {
         
-        int connectionID_INT = 99;
+        int connectionID_INT = 999;
 
         try{
             connectionID_INT = Integer.parseInt(connectionID) - 1;
@@ -160,16 +177,12 @@ public class Chat {
 
         if(connectionID_INT < clientList.size() && connectionID_INT >= 0) {
             Client client = clientList.get(connectionID_INT);
-            //Client client = server.al.get(connectionID_INT);
             try{
-                //String user = client.getIP() + " " + client.getMyPort(); 
                 client.sendMessage(new ChatMessage(user, message));
-                //if(!server.al.get(connectionID_INT).writeMsg(message))
-                //    System.out.println("ERROR: no message");
             } catch(Exception e){
                 System.out.println("\n\tError " + e);
             }
-        } else System.out.println("\n\tID not in list.");
+        } else System.out.println("\tID not in list.");
     }
 
     // Close all connections and terminate this process. The other peers should
@@ -187,7 +200,6 @@ public class Chat {
 
     //////////////////////////////////////////////
     //////////////////// MAIN ////////////////////
-
     public static void main(String[] args) {
 
         Chat chat = new Chat();        
@@ -218,57 +230,49 @@ public class Chat {
             };
         }.start();
 
-        String welcomeMsg = "";        
-        welcomeMsg += "\n"
-                //+ "\n#########################"
-                + "\nWelcome to Chat.java     "
+        String welcomeMsg = "\n"
+                + "\nWelcome to Chat.java"
                 + "\nEnter 'help' to get a list of commands...";
-                //+ "\nYour port number is: " + portNumber + "";
         System.out.println(welcomeMsg);
 
         endProgram:
         while (true) {
-            System.out.print("  >> ");
             input = scan.nextLine();
             inputTokens = input.split(" ");
             switch (inputTokens[0]) {
                 case "help" :
                     chat.help();
+                    System.out.print("  >> ");
                     break;
 
                 case "myip" :
                     System.out.println("\t" + chat.myip() + "\n");
+                    System.out.print("  >> ");
                     break;
 
                 case "myport" :
                     chat.myport(portNumber);
+                    System.out.print("  >> ");
                     break;
 
                 case "connect" :
                     if (inputTokens.length > 2){
-                        String myIP = "";
-                        try(final DatagramSocket socket = new DatagramSocket()){                       
-                            socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
-                            myIP = socket.getLocalAddress().getHostAddress();
-                        } catch(Exception e){
-                            System.out.println("Error : " + e);
-                        }
-                        String portNumber_STR = "" + portNumber;
-
                         try{
-                            //connect ( destinationIP, destinationPort, myPort, myIP)
-                            chat.connect(inputTokens[1], inputTokens[2], portNumber_STR, myIP);
+                            //connect <destinationIP> <destinationPort> <myPort> <myIP>
+                            String portNumber_STR = "" + portNumber;
+                            chat.connect(inputTokens[1], inputTokens[2], portNumber_STR, chat.myip());
                             
                         }catch(Exception e) {
-                            System.out.println("Error : " + e);
+                            System.out.print("\n\tError : " + e + "\n\tNot connected.\n\n  >> ");
                         }
                     }
                     else 
-                        System.out.println("\tError: Not enough arguements.\n");
+                        System.out.print("\tError: Not enough arguements.\n\n  >> ");
                     break;
 
                 case "list" :
                     chat.list(server);
+                    System.out.print("  >> ");
                     break;
 
                 case "terminate" :
@@ -276,13 +280,19 @@ public class Chat {
                         chat.terminate(inputTokens[1], server);
                     else 
                         System.out.println("\tError: Not enough arguements.\n");
+                    
+                    System.out.print("  >> ");
                     break;
 
                 case "send" :
-                    if (inputTokens.length > 2)    
-                        chat.send(user, inputTokens[1], inputTokens[2], server);
-                    else 
-                        System.out.println("\tError: Not enough arguements. \n");
+                    if (inputTokens.length > 2){ 
+                        int throwAway = inputTokens[0].length() + inputTokens[1].length() + 2;
+                        String message = input.substring(throwAway);
+                        chat.send(user, inputTokens[1], message, server);
+                    } else 
+                        System.out.println("\tError: Not enough arguements.");
+                        
+                    System.out.print("\n  >> ");
                     break;
 
                 case "exit" :
@@ -290,20 +300,18 @@ public class Chat {
                     break endProgram;
 
                 case "" :
+                    System.out.print("  >> ");
                     break;
 
                 default :
                     System.out.println(""
                             + "\tError: '" + inputTokens[0] + "' is not a recognized command of this chat application. "
                             + "\n\tEnter 'help' to get a list of commands.\n");
+                            
+                    System.out.print("  >> ");
                     break;
             }
         }
-        String msg = "\n\tConnections closed. Program terminating.\n";
-        System.out.println(msg);
-
+        System.out.println("\tConnections closed. Program terminating.");
     }
-
-    
-
 }
